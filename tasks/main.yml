@@ -1,0 +1,4 @@
+---
+- include: install.yml
+- include: server.yml
+- include: local_facts.yml

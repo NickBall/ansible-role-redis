@@ -1,0 +1,58 @@
+---
+# server.yml file for redis
+- name: create working dir
+  file:
+    path={{ redis_dir }}
+    state=directory
+    recurse=yes
+    owner={{ redis_user }}
+
+- name: create redis init
+  template:
+    src="{{ item }}"
+    dest=/etc/init.d/redis_{{ redis_port }}
+    mode=0755
+  with_first_found:
+    - files:
+      - "{{ ansible_os_family }}/init.j2"
+      - default/init.j2
+    - paths:
+      - ../templates
+  when: redis_as_service
+
+- name: add redis init config
+  template:
+    dest=/etc/default/redis_{{ redis_port }}
+    src=redis.init.conf.j2
+    mode=0600
+  when: ansible_os_family == "Debian"
+  notify: restart redis
+
+- name: set redis to start at boot
+  service:
+    name=redis_{{ redis_port }}
+    enabled=yes
+  when: redis_as_service
+
+- name: ensure pid exists
+  file: 
+    path={{ redis_pidfile|dirname }}
+    owner={{ redis_user }}
+    state=directory
+    recurse=yes
+
+- name: create config file
+  template:
+    src=redis.conf.j2
+    dest=/etc/redis/{{ redis_port }}.conf
+    owner={{ redis_user }}
+  notify: restart redis
+
+- name: flush handlers
+  meta: flush_handlers
+
+- name: ensure service running
+  service:
+    name=redis_{{ redis_port }}
+    state=started
+  when: redis_as_service

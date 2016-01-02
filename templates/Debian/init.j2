@@ -1,0 +1,75 @@
+#!/bin/sh
+#
+# Simple Redis init.d script conceived to work on Linux systems
+# as it does use of the /proc filesystem.
+#
+# Adapted for Ansible from redis distribution (utils/redis_init_script)
+#
+### BEGIN INIT INFO
+# Provides:          redis_{{ redis_port }}
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Should-Start:      $syslog $named
+# Should-Stop:       $syslog $named
+# Short-Description: redis_{{ redis_port }}
+# Description:       Redis KV store
+### END INIT INFO
+
+# Linux Standard Base functions
+. /lib/lsb/init-functions
+
+REDIS_PORT={{ redis_port }}
+REDIS_USER={{ redis_user }}
+EXEC={{ redis_install_dir }}/bin/redis-server
+NAME=redis_${REDIS_PORT}
+PIDFILE={{ redis_pidfile }}
+
+CONF="/etc/redis/${REDIS_PORT}.conf"
+
+if [ -r /etc/default/redis_${REDIS_PORT} ]; then
+    . /etc/default/redis_${REDIS_PORT}
+fi
+
+case "$1" in
+    start)
+        if [ -n "$REDIS_ULIMIT" ]; then
+            ulimit -n $REDIS_ULIMIT
+        fi
+
+        if [ -d "$PIDFILE_DIR" ]; then
+            mkdir "${PIDFILE_DIR}"
+            chown ${REDIS_USER}:${REDIS_USER} "$PIDFILE_DIR"
+            chmod 0755 "$PIDFILE_DIR"
+        fi
+
+        log_daemon_msg "Starting $NAME..."
+        if start-stop-daemon --start -q --oknodo -p "$PIDFILE" -c $REDIS_USER --exec $EXEC -- $CONF; then
+            log_end_msg 0
+        else
+            log_end_msg 1
+        fi
+        ;;
+    stop)
+        log_daemon_msg "Stopping $NAME..."
+        if start-stop-daemon --stop -q --retry 10 --oknodo -p "$PIDFILE" --exec $EXEC; then
+          log_end_msg 0
+        else
+          log_end_msg 1
+        fi
+        ;;
+    status)
+        status_of_proc -p "$PIDFILE" $DAEMON "$NAME" && exit 0 || exit $?
+        ;;
+    restart|force-reload)
+        ${0} stop
+        ${0} start
+        ;;
+    *)
+        echo "Usage: service $NAME {start|stop|status|restart|force-reload}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

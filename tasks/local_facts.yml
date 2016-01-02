@@ -1,0 +1,7 @@
+---
+#  local_facts.yml file for redis
+- name: create facts directory
+  file: path='/etc/ansible/facts.d' state='directory'
+
+- name: create redis facts
+  template: src='redis.facts.j2' dest='/etc/ansible/facts.d/redis_{{ redis_port }}.fact'
