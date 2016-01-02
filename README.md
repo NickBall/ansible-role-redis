@@ -3,6 +3,10 @@ redis
 
 A basic standalone Redis install (uses latest stable redis)
 
+Install
+-------
+Run `ansible-galaxy install NickBall.redis`
+
 Requirements
 ------------
 
@@ -29,7 +33,7 @@ Example Playbook
     - hosts: redis
       sudo: yes
       roles:
-      - redis
+      - NickBall.redis
 ```
 
 License
@@ -40,4 +44,4 @@ MIT
 Author Information
 ------------------
 
-Nick Ball [Github @nickball](http://github.com/nickball)
+Nick Ball ([Github @nickball](http://github.com/nickball))
